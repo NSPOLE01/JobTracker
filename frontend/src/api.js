@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-const api = axios.create({ baseURL: 'http://localhost:8000' })
+const api = axios.create({ baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8000' })
 
 export const getAuthStatus = () => api.get('/auth/status')
 export const getAuthUrl   = () => api.get('/auth/google')
