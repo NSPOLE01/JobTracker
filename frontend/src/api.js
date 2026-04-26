@@ -1,0 +1,10 @@
+import axios from 'axios'
+
+const api = axios.create({ baseURL: 'http://localhost:8000' })
+
+export const getAuthStatus = () => api.get('/auth/status')
+export const getAuthUrl   = () => api.get('/auth/google')
+export const getJobs      = () => api.get('/jobs')
+export const getStats     = () => api.get('/stats')
+export const triggerScan  = () => api.post('/scan')
+export const deleteJob    = (id) => api.delete(`/jobs/${id}`)
