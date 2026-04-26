@@ -24,3 +24,11 @@ class ProcessedEmail(Base):
     id = Column(Integer, primary_key=True, index=True)
     email_id = Column(String, unique=True, index=True)
     processed_at = Column(DateTime, default=func.now())
+
+
+class OAuthToken(Base):
+    __tablename__ = "oauth_tokens"
+
+    id = Column(Integer, primary_key=True, index=True)
+    token_json = Column(Text, nullable=False)
+    updated_at = Column(DateTime, default=func.now(), onupdate=func.now())

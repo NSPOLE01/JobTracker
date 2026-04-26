@@ -10,7 +10,6 @@ from google.auth.transport.requests import Request
 from email_parser import extract_job_details
 
 SCOPES = ["https://www.googleapis.com/auth/gmail.readonly"]
-TOKEN_FILE = "token.json"
 
 GMAIL_QUERY = (
     '(subject:application OR subject:interview OR subject:offer '
@@ -41,22 +40,48 @@ def get_auth_url() -> str:
     return url
 
 
+def _save_token(creds: Credentials) -> None:
+    from database import SessionLocal
+    from models import OAuthToken
+    db = SessionLocal()
+    try:
+        token = db.query(OAuthToken).first()
+        if token:
+            token.token_json = creds.to_json()
+        else:
+            db.add(OAuthToken(token_json=creds.to_json()))
+        db.commit()
+    finally:
+        db.close()
+
+
+def _load_token_json() -> str | None:
+    from database import SessionLocal
+    from models import OAuthToken
+    db = SessionLocal()
+    try:
+        token = db.query(OAuthToken).first()
+        return token.token_json if token else None
+    finally:
+        db.close()
+
+
 def handle_callback(code: str):
     flow = _get_flow()
     flow.fetch_token(code=code)
-    with open(TOKEN_FILE, "w") as f:
-        f.write(flow.credentials.to_json())
+    _save_token(flow.credentials)
 
 
 def load_credentials() -> Credentials | None:
-    if not os.path.exists(TOKEN_FILE):
+    token_json = _load_token_json()
+    if not token_json:
         return None
-    creds = Credentials.from_authorized_user_file(TOKEN_FILE, SCOPES)
+    import json
+    creds = Credentials.from_authorized_user_info(json.loads(token_json), SCOPES)
     if creds and creds.expired and creds.refresh_token:
         try:
             creds.refresh(Request())
-            with open(TOKEN_FILE, "w") as f:
-                f.write(creds.to_json())
+            _save_token(creds)
         except Exception:
             return None
     return creds if (creds and creds.valid) else None
