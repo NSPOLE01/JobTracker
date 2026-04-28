@@ -49,21 +49,6 @@ export default function Dashboard({ email }) {
   const toastTimer                       = useRef(null)
   const tableRef                         = useRef(null)
 
-  const wsUrl = (import.meta.env.VITE_API_URL || 'http://localhost:8000')
-    .replace(/^http/, 'ws') + '/ws'
-
-  const handleWsMessage = useCallback((msg) => {
-    if (msg.type !== 'scan_complete') return
-    fetchAll()
-    if (msg.new_jobs > 0) {
-      clearTimeout(toastTimer.current)
-      setToast(`${msg.new_jobs} new application${msg.new_jobs !== 1 ? 's' : ''} found`)
-      toastTimer.current = setTimeout(() => setToast(null), 4000)
-    }
-  }, [fetchAll])
-
-  useWebSocket(wsUrl, handleWsMessage)
-
   const fetchAll = useCallback(async () => {
     try {
       const [j, s] = await Promise.all([getJobs(), getStats()])
@@ -80,6 +65,21 @@ export default function Dashboard({ email }) {
   useEffect(() => {
     fetchAll()
   }, [fetchAll])
+
+  const wsUrl = (import.meta.env.VITE_API_URL || 'http://localhost:8000')
+    .replace(/^http/, 'ws') + '/ws'
+
+  const handleWsMessage = useCallback((msg) => {
+    if (msg.type !== 'scan_complete') return
+    fetchAll()
+    if (msg.new_jobs > 0) {
+      clearTimeout(toastTimer.current)
+      setToast(`${msg.new_jobs} new application${msg.new_jobs !== 1 ? 's' : ''} found`)
+      toastTimer.current = setTimeout(() => setToast(null), 4000)
+    }
+  }, [fetchAll])
+
+  useWebSocket(wsUrl, handleWsMessage)
 
   const handleCardClick = (filter) => {
     setActiveFilter(filter)
