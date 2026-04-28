@@ -105,14 +105,17 @@ def get_stats(db: Session = Depends(get_db)):
     offers = sum(1 for j in jobs if j.status == "offer")
     rejections = sum(1 for j in jobs if j.status == "rejected")
 
-    week_counts: dict[str, int] = {}
+    from datetime import date as date_type
+    week_counts: dict[date_type, int] = {}
     for j in jobs:
         if j.email_date:
-            week_start = j.email_date - timedelta(days=j.email_date.weekday())
-            key = week_start.strftime("%b %d")
-            week_counts[key] = week_counts.get(key, 0) + 1
+            week_start = (j.email_date - timedelta(days=j.email_date.weekday())).date()
+            week_counts[week_start] = week_counts.get(week_start, 0) + 1
 
-    by_week = [{"week": k, "count": v} for k, v in sorted(week_counts.items())]
+    by_week = [
+        {"week": k.strftime("%b %d"), "count": v}
+        for k, v in sorted(week_counts.items())
+    ]
 
     return {
         "total": total,
