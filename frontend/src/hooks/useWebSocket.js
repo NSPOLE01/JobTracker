@@ -37,6 +37,7 @@ export function useWebSocket(url, onMessage) {
   }, [url, onMessage])
 
   useEffect(() => {
+    unmounted.current = false
     connect()
     return () => {
       unmounted.current = true
