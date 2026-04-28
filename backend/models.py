@@ -1,5 +1,5 @@
 from datetime import datetime
-from sqlalchemy import Column, Integer, String, DateTime, Text
+from sqlalchemy import Column, Integer, String, DateTime, Text, ForeignKey
 from sqlalchemy.sql import func
 from database import Base
 
@@ -24,6 +24,17 @@ class ProcessedEmail(Base):
     id = Column(Integer, primary_key=True, index=True)
     email_id = Column(String, unique=True, index=True)
     processed_at = Column(DateTime, default=func.now())
+
+
+class JobEvent(Base):
+    __tablename__ = "job_events"
+
+    id = Column(Integer, primary_key=True, index=True)
+    job_application_id = Column(Integer, ForeignKey("job_applications.id", ondelete="CASCADE"), nullable=False, index=True)
+    status = Column(String)
+    email_date = Column(DateTime)
+    snippet = Column(Text)
+    created_at = Column(DateTime, default=func.now())
 
 
 class OAuthToken(Base):

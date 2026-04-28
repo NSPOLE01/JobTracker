@@ -9,6 +9,14 @@ from google.auth.transport.requests import Request
 
 from email_parser import extract_job_details
 
+_STATUS_ORDER = ["applied", "in_review", "phone_screen", "interview_scheduled", "offer", "rejected"]
+
+def _status_rank(status: str) -> int:
+    try:
+        return _STATUS_ORDER.index(status)
+    except ValueError:
+        return -1
+
 SCOPES = ["https://www.googleapis.com/auth/gmail.readonly"]
 
 GMAIL_QUERY = (
@@ -159,19 +167,33 @@ def scan_emails(db, days_back: int = None) -> int:
                     existing = query.order_by(JobApplication.email_date.desc()).first()
 
             if existing:
-                existing.status = status
+                if _status_rank(status) > _status_rank(existing.status):
+                    existing.status = status
                 existing.email_date = email_date
                 existing.snippet = snippet[:500]
                 db.add(existing)
+                db.flush()
+                job_id = existing.id
             else:
-                db.add(JobApplication(
+                new_job = JobApplication(
                     company=company,
                     role=role,
                     status=status,
                     email_date=email_date,
                     snippet=snippet[:500],
                     sender_email=sender,
-                ))
+                )
+                db.add(new_job)
+                db.flush()
+                job_id = new_job.id
+
+            from models import JobEvent
+            db.add(JobEvent(
+                job_application_id=job_id,
+                status=status,
+                email_date=email_date,
+                snippet=snippet[:500],
+            ))
 
             db.commit()
             processed_count += 1

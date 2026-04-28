@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { deleteJob } from '../api'
 import StatusBadge, { STATUS_CONFIG } from './StatusBadge'
+import CompanyTimeline from './CompanyTimeline'
 
 function formatDate(iso) {
   if (!iso) return '—'
@@ -36,7 +37,7 @@ export default function JobsTable({ jobs, onDelete, filter: externalFilter, onFi
   const [internalFilter, setInternalFilter] = useState('all')
   const [search, setSearch]       = useState('')
   const [deletingId, setDeletingId] = useState(null)
-  const [expandedId, setExpandedId] = useState(null)
+  const [selectedJob, setSelectedJob] = useState(null)
 
   const filter    = externalFilter !== undefined ? externalFilter : internalFilter
   const setFilter = (v) => {
@@ -70,6 +71,10 @@ export default function JobsTable({ jobs, onDelete, filter: externalFilter, onFi
   }
 
   return (
+    <>
+    {selectedJob && (
+      <CompanyTimeline job={selectedJob} onClose={() => setSelectedJob(null)} />
+    )}
     <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
       {/* Toolbar */}
       <div className="px-5 py-3.5 border-b border-slate-100 flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
@@ -133,7 +138,7 @@ export default function JobsTable({ jobs, onDelete, filter: externalFilter, onFi
                 <React.Fragment key={job.id}>
                   <tr
                     key={job.id}
-                    onClick={() => setExpandedId(expandedId === job.id ? null : job.id)}
+                    onClick={() => setSelectedJob(job)}
                     className="hover:bg-slate-50/80 transition-colors cursor-pointer group"
                   >
                     <td className="px-5 py-3.5">
@@ -174,13 +179,6 @@ export default function JobsTable({ jobs, onDelete, filter: externalFilter, onFi
                     </td>
                   </tr>
 
-                  {expandedId === job.id && job.snippet && (
-                    <tr className="bg-slate-50/60">
-                      <td colSpan={6} className="px-5 py-3">
-                        <p className="text-slate-500 text-xs leading-relaxed">{job.snippet}</p>
-                      </td>
-                    </tr>
-                  )}
                 </React.Fragment>
               ))}
             </tbody>
@@ -188,5 +186,6 @@ export default function JobsTable({ jobs, onDelete, filter: externalFilter, onFi
         )}
       </div>
     </div>
+    </>
   )
 }

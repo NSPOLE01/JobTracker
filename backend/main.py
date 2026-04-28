@@ -159,9 +159,19 @@ def get_stats(db: Session = Depends(get_db)):
     jobs = db.query(models.JobApplication).all()
 
     total = len(jobs)
-    interviews = sum(1 for j in jobs if j.status in ("interview_scheduled", "phone_screen"))
     offers = sum(1 for j in jobs if j.status == "offer")
     rejections = sum(1 for j in jobs if j.status == "rejected")
+
+    # Count distinct companies that had any interview event (even if later rejected)
+    interviewed_job_ids = {
+        row[0] for row in
+        db.query(models.JobEvent.job_application_id)
+        .filter(models.JobEvent.status.in_(["phone_screen", "interview_scheduled"]))
+        .distinct()
+        .all()
+    }
+    job_map = {j.id: j for j in jobs}
+    interviews = len({job_map[jid].company for jid in interviewed_job_ids if jid in job_map and job_map[jid].company})
 
     from datetime import date as date_type
     week_counts: dict[date_type, int] = {}
@@ -192,6 +202,33 @@ async def trigger_scan(background_tasks: BackgroundTasks):
     return {"message": "Scan started"}
 
 
+@app.get("/admin/debug-email")
+def debug_email(q: str):
+    """Pass ?q=<gmail search> e.g. ?q=from:brigit or ?q=subject:interview"""
+    from gmail_service import load_credentials, _extract_body
+    from googleapiclient.discovery import build
+    from email_parser import extract_job_details
+    creds = load_credentials()
+    if not creds:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    service = build("gmail", "v1", credentials=creds)
+    result = service.users().messages().list(userId="me", q=q, maxResults=5).execute()
+    messages = result.get("messages", [])
+    if not messages:
+        raise HTTPException(status_code=404, detail="No emails found for that query")
+    out = []
+    for meta in messages:
+        msg = service.users().messages().get(userId="me", id=meta["id"], format="full").execute()
+        headers = {h["name"]: h["value"] for h in msg.get("payload", {}).get("headers", [])}
+        subject = headers.get("Subject", "")
+        sender = headers.get("From", "")
+        snippet = msg.get("snippet", "")
+        body = _extract_body(msg)
+        details = extract_job_details(subject, body or snippet, sender)
+        out.append({"subject": subject, "sender": sender, "snippet": snippet, "parsed": details})
+    return out
+
+
 @app.post("/admin/reset-and-seed")
 async def reset_and_seed(background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     if not load_credentials():
@@ -211,6 +248,25 @@ async def reset_and_seed(background_tasks: BackgroundTasks, db: Session = Depend
 
     background_tasks.add_task(_seed)
     return {"message": "Database cleared. Seeding last 30 days of emails in background."}
+
+
+@app.get("/jobs/{job_id}/events")
+def get_job_events(job_id: int, db: Session = Depends(get_db)):
+    events = (
+        db.query(models.JobEvent)
+        .filter(models.JobEvent.job_application_id == job_id)
+        .order_by(models.JobEvent.email_date)
+        .all()
+    )
+    return [
+        {
+            "id": e.id,
+            "status": e.status,
+            "email_date": e.email_date.isoformat() if e.email_date else None,
+            "snippet": e.snippet,
+        }
+        for e in events
+    ]
 
 
 @app.delete("/jobs/{job_id}")

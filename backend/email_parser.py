@@ -93,7 +93,7 @@ Respond with JSON only:
     )
 
     text = message.content[0].text.strip()
-    # Strip markdown code fences if present
+    print(f"[claude] subject={subject!r} → {text}")
     if text.startswith("```"):
         text = re.sub(r"^```(?:json)?\s*|\s*```$", "", text, flags=re.MULTILINE).strip()
     return json.loads(text)
