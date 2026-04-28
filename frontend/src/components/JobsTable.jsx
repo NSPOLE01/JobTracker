@@ -19,16 +19,36 @@ function CompanyAvatar({ name }) {
   )
 }
 
-const STATUSES = ['all', ...Object.keys(STATUS_CONFIG)]
+const FILTER_LABELS = {
+  all:                  'All statuses',
+  interviews:           'Interviews',
+  ...Object.fromEntries(Object.entries(STATUS_CONFIG).map(([k, v]) => [k, v.label])),
+}
+const STATUSES = ['all', 'interviews', ...Object.keys(STATUS_CONFIG)]
 
-export default function JobsTable({ jobs, onDelete }) {
-  const [filter, setFilter] = useState('all')
-  const [search, setSearch] = useState('')
+function matchesFilter(job, filter) {
+  if (filter === 'all')        return true
+  if (filter === 'interviews') return job.status === 'phone_screen' || job.status === 'interview_scheduled'
+  return job.status === filter
+}
+
+export default function JobsTable({ jobs, onDelete, filter: externalFilter, onFilterChange }) {
+  const [internalFilter, setInternalFilter] = useState('all')
+  const [search, setSearch]       = useState('')
   const [deletingId, setDeletingId] = useState(null)
   const [expandedId, setExpandedId] = useState(null)
 
+  const filter    = externalFilter !== undefined ? externalFilter : internalFilter
+  const setFilter = (v) => {
+    if (onFilterChange) {
+      onFilterChange(v)
+    } else {
+      setInternalFilter(v)
+    }
+  }
+
   const filtered = jobs.filter((j) => {
-    const matchStatus = filter === 'all' || j.status === filter
+    const matchStatus = matchesFilter(j, filter)
     const q = search.toLowerCase()
     const matchSearch = !q ||
       j.company?.toLowerCase().includes(q) ||
@@ -81,9 +101,7 @@ export default function JobsTable({ jobs, onDelete }) {
             className="text-xs bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-400/30 text-slate-600 cursor-pointer"
           >
             {STATUSES.map((s) => (
-              <option key={s} value={s}>
-                {s === 'all' ? 'All statuses' : STATUS_CONFIG[s]?.label ?? s}
-              </option>
+              <option key={s} value={s}>{FILTER_LABELS[s] ?? s}</option>
             ))}
           </select>
         </div>
@@ -118,7 +136,6 @@ export default function JobsTable({ jobs, onDelete }) {
                     onClick={() => setExpandedId(expandedId === job.id ? null : job.id)}
                     className="hover:bg-slate-50/80 transition-colors cursor-pointer group"
                   >
-                    {/* Company */}
                     <td className="px-5 py-3.5">
                       <div className="flex items-center gap-2.5">
                         <CompanyAvatar name={job.company} />
@@ -127,28 +144,18 @@ export default function JobsTable({ jobs, onDelete }) {
                         </span>
                       </div>
                     </td>
-
-                    {/* Role */}
                     <td className="px-5 py-3.5 max-w-[200px]">
                       <span className="text-slate-600 text-sm truncate block">{job.role || '—'}</span>
                     </td>
-
-                    {/* Status */}
                     <td className="px-5 py-3.5 whitespace-nowrap">
                       <StatusBadge status={job.status} />
                     </td>
-
-                    {/* Date */}
                     <td className="px-5 py-3.5 whitespace-nowrap">
                       <span className="font-mono text-slate-400 text-xs">{formatDate(job.email_date)}</span>
                     </td>
-
-                    {/* Snippet */}
                     <td className="px-5 py-3.5 max-w-[260px] hidden lg:table-cell">
                       <p className="text-slate-400 text-xs truncate">{job.snippet || '—'}</p>
                     </td>
-
-                    {/* Delete */}
                     <td className="px-3 py-3.5 text-right">
                       <button
                         onClick={(e) => handleDelete(e, job.id)}
@@ -159,8 +166,7 @@ export default function JobsTable({ jobs, onDelete }) {
                           ? <span className="block w-3.5 h-3.5 border border-current border-t-transparent rounded-full animate-spin" />
                           : (
                             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                              <path strokeLinecap="round" strokeLinejoin="round"
-                                d="M6 18L18 6M6 6l12 12" />
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                             </svg>
                           )
                         }
@@ -168,7 +174,6 @@ export default function JobsTable({ jobs, onDelete }) {
                     </td>
                   </tr>
 
-                  {/* Expanded snippet row */}
                   {expandedId === job.id && job.snippet && (
                     <tr key={`${job.id}-exp`} className="bg-slate-50/60">
                       <td colSpan={6} className="px-5 py-3">

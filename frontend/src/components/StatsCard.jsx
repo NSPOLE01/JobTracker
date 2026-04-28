@@ -26,12 +26,16 @@ const ACCENT = {
   red:    'bg-red-50 text-red-500',
 }
 
-export default function StatsCard({ label, value, icon, color, delay = 0 }) {
+export default function StatsCard({ label, value, icon, color, delay = 0, onClick, active = false }) {
   const count = useCountUp(value ?? 0)
 
   return (
     <div
-      className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm card-lift opacity-0 animate-fade-up"
+      onClick={onClick}
+      className={`bg-white rounded-2xl border p-5 shadow-sm opacity-0 animate-fade-up transition-all duration-150
+        ${onClick ? 'cursor-pointer card-lift' : ''}
+        ${active ? 'border-indigo-300 ring-2 ring-indigo-100 shadow-indigo-100' : 'border-slate-100'}
+      `}
       style={{ animationDelay: `${delay}ms`, animationFillMode: 'forwards' }}
     >
       <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-base mb-4 ${ACCENT[color] ?? ACCENT.blue}`}>
@@ -40,7 +44,14 @@ export default function StatsCard({ label, value, icon, color, delay = 0 }) {
       <p className="font-mono text-[2.6rem] leading-none font-semibold text-slate-900 mb-1 tracking-tight">
         {count}
       </p>
-      <p className="text-slate-400 text-xs font-semibold uppercase tracking-widest">{label}</p>
+      <div className="flex items-center justify-between">
+        <p className="text-slate-400 text-xs font-semibold uppercase tracking-widest">{label}</p>
+        {onClick && (
+          <span className={`text-[10px] font-medium transition-colors ${active ? 'text-indigo-500' : 'text-slate-300'}`}>
+            {active ? 'Filtered ↓' : 'View →'}
+          </span>
+        )}
+      </div>
     </div>
   )
 }

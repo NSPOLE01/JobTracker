@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { getJobs, getStats } from '../api'
 import Header from './Header'
 import StatsCard from './StatsCard'
@@ -9,10 +9,10 @@ import {
 } from 'recharts'
 
 const STAT_CARDS = [
-  { key: 'total',      label: 'Total Applied',  icon: '📋', color: 'blue'   },
-  { key: 'interviews', label: 'Interviews',      icon: '🗣',  color: 'purple' },
-  { key: 'offers',     label: 'Offers',          icon: '🎉', color: 'green'  },
-  { key: 'rejections', label: 'Rejections',      icon: '📉', color: 'red'    },
+  { key: 'total',      label: 'Total Applied', icon: '📋', color: 'blue',   filter: 'all'        },
+  { key: 'interviews', label: 'Interviews',     icon: '🗣',  color: 'purple', filter: 'interviews' },
+  { key: 'offers',     label: 'Offers',         icon: '🎉', color: 'green',  filter: 'offer'      },
+  { key: 'rejections', label: 'Rejections',     icon: '📉', color: 'red',    filter: 'rejected'   },
 ]
 
 function ChartTooltip({ active, payload, label }) {
@@ -39,10 +39,12 @@ function EmptyState() {
 }
 
 export default function Dashboard({ email }) {
-  const [jobs, setJobs]       = useState([])
-  const [stats, setStats]     = useState({ total: 0, interviews: 0, offers: 0, rejections: 0, by_week: [] })
-  const [loading, setLoading] = useState(true)
+  const [jobs, setJobs]             = useState([])
+  const [stats, setStats]           = useState({ total: 0, interviews: 0, offers: 0, rejections: 0, by_week: [] })
+  const [loading, setLoading]       = useState(true)
   const [lastScanned, setLastScanned] = useState(null)
+  const [activeFilter, setActiveFilter] = useState('all')
+  const tableRef = useRef(null)
 
   const fetchAll = useCallback(async () => {
     try {
@@ -62,6 +64,11 @@ export default function Dashboard({ email }) {
     const id = setInterval(fetchAll, 60_000)
     return () => clearInterval(id)
   }, [fetchAll])
+
+  const handleCardClick = (filter) => {
+    setActiveFilter(filter)
+    tableRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
 
   const handleDelete = (id) => {
     setJobs((prev) => prev.filter((j) => j.id !== id))
@@ -89,6 +96,8 @@ export default function Dashboard({ email }) {
                   icon={c.icon}
                   color={c.color}
                   delay={i * 70}
+                  onClick={() => handleCardClick(c.filter)}
+                  active={activeFilter === c.filter}
                 />
               ))}
             </div>
@@ -138,12 +147,18 @@ export default function Dashboard({ email }) {
 
             {/* Jobs table or empty state */}
             <div
+              ref={tableRef}
               className="opacity-0 animate-fade-up"
               style={{ animationDelay: '350ms', animationFillMode: 'forwards' }}
             >
               {jobs.length === 0
                 ? <EmptyState />
-                : <JobsTable jobs={jobs} onDelete={handleDelete} />
+                : <JobsTable
+                    jobs={jobs}
+                    onDelete={handleDelete}
+                    filter={activeFilter}
+                    onFilterChange={setActiveFilter}
+                  />
               }
             </div>
           </>
