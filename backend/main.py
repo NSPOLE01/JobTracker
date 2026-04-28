@@ -1,8 +1,9 @@
+import asyncio
 import os
 from contextlib import asynccontextmanager
 from datetime import timedelta
 
-from fastapi import FastAPI, Depends, BackgroundTasks, HTTPException
+from fastapi import FastAPI, Depends, BackgroundTasks, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
@@ -18,20 +19,67 @@ from gmail_service import get_auth_url, handle_callback, load_credentials, get_u
 models.Base.metadata.create_all(bind=engine)
 
 scheduler = BackgroundScheduler()
+_loop: asyncio.AbstractEventLoop | None = None
+
+
+class ConnectionManager:
+    def __init__(self):
+        self.active: list[WebSocket] = []
+
+    async def connect(self, ws: WebSocket):
+        await ws.accept()
+        self.active.append(ws)
+
+    def disconnect(self, ws: WebSocket):
+        if ws in self.active:
+            self.active.remove(ws)
+
+    async def broadcast(self, data: dict):
+        dead = []
+        for ws in self.active:
+            try:
+                await ws.send_json(data)
+            except Exception:
+                dead.append(ws)
+        for ws in dead:
+            self.disconnect(ws)
+
+
+manager = ConnectionManager()
+
+
+def _notify(new_jobs: int):
+    if new_jobs and _loop and not _loop.is_closed():
+        asyncio.run_coroutine_threadsafe(
+            manager.broadcast({"type": "scan_complete", "new_jobs": new_jobs}),
+            _loop,
+        )
 
 
 def _scheduled_scan():
     db = SessionLocal()
     try:
         n = scan_emails(db)
-        if n:
-            print(f"[scheduler] {n} new job(s) found")
+        print(f"[scheduler] {n} new job(s) found")
+        _notify(n)
+    finally:
+        db.close()
+
+
+async def _run_scan():
+    db = SessionLocal()
+    try:
+        loop = asyncio.get_event_loop()
+        n = await loop.run_in_executor(None, scan_emails, db)
+        await manager.broadcast({"type": "scan_complete", "new_jobs": n})
     finally:
         db.close()
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    global _loop
+    _loop = asyncio.get_running_loop()
     scheduler.add_job(_scheduled_scan, "interval", minutes=15, id="email_scan")
     scheduler.start()
     yield
@@ -50,6 +98,16 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.websocket("/ws")
+async def websocket_endpoint(ws: WebSocket):
+    await manager.connect(ws)
+    try:
+        while True:
+            await ws.receive_text()
+    except WebSocketDisconnect:
+        manager.disconnect(ws)
 
 
 @app.get("/auth/google")
@@ -127,10 +185,10 @@ def get_stats(db: Session = Depends(get_db)):
 
 
 @app.post("/scan")
-def trigger_scan(background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
+async def trigger_scan(background_tasks: BackgroundTasks):
     if not load_credentials():
         raise HTTPException(status_code=401, detail="Not authenticated with Gmail")
-    background_tasks.add_task(scan_emails, db)
+    background_tasks.add_task(_run_scan)
     return {"message": "Scan started"}
 
 

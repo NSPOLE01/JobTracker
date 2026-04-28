@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { getJobs, getStats } from '../api'
+import { useWebSocket } from '../hooks/useWebSocket'
 import Header from './Header'
 import StatsCard from './StatsCard'
 import JobsTable from './JobsTable'
@@ -44,7 +45,24 @@ export default function Dashboard({ email }) {
   const [loading, setLoading]       = useState(true)
   const [lastScanned, setLastScanned] = useState(null)
   const [activeFilter, setActiveFilter] = useState('all')
-  const tableRef = useRef(null)
+  const [toast, setToast]               = useState(null)
+  const toastTimer                       = useRef(null)
+  const tableRef                         = useRef(null)
+
+  const wsUrl = (import.meta.env.VITE_API_URL || 'http://localhost:8000')
+    .replace(/^http/, 'ws') + '/ws'
+
+  const handleWsMessage = useCallback((msg) => {
+    if (msg.type !== 'scan_complete') return
+    fetchAll()
+    if (msg.new_jobs > 0) {
+      clearTimeout(toastTimer.current)
+      setToast(`${msg.new_jobs} new application${msg.new_jobs !== 1 ? 's' : ''} found`)
+      toastTimer.current = setTimeout(() => setToast(null), 4000)
+    }
+  }, [fetchAll])
+
+  useWebSocket(wsUrl, handleWsMessage)
 
   const fetchAll = useCallback(async () => {
     try {
@@ -61,8 +79,6 @@ export default function Dashboard({ email }) {
 
   useEffect(() => {
     fetchAll()
-    const id = setInterval(fetchAll, 60_000)
-    return () => clearInterval(id)
   }, [fetchAll])
 
   const handleCardClick = (filter) => {
@@ -77,6 +93,14 @@ export default function Dashboard({ email }) {
 
   return (
     <div className="min-h-screen bg-slate-50">
+      {/* Toast notification */}
+      <div className={`fixed top-4 left-1/2 -translate-x-1/2 z-50 transition-all duration-300 ${toast ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2 pointer-events-none'}`}>
+        <div className="flex items-center gap-2.5 bg-slate-900 text-white text-xs font-medium px-4 py-2.5 rounded-xl shadow-xl">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+          {toast}
+        </div>
+      </div>
+
       <Header email={email} lastScanned={lastScanned} onScanComplete={fetchAll} />
 
       <main className="max-w-6xl mx-auto px-5 py-7 space-y-6">
