@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import React, { useState } from 'react'
 import { deleteJob } from '../api'
 import StatusBadge, { STATUS_CONFIG } from './StatusBadge'
 
@@ -130,7 +130,7 @@ export default function JobsTable({ jobs, onDelete, filter: externalFilter, onFi
             </thead>
             <tbody className="divide-y divide-slate-50">
               {filtered.map((job) => (
-                <>
+                <React.Fragment key={job.id}>
                   <tr
                     key={job.id}
                     onClick={() => setExpandedId(expandedId === job.id ? null : job.id)}
@@ -175,13 +175,13 @@ export default function JobsTable({ jobs, onDelete, filter: externalFilter, onFi
                   </tr>
 
                   {expandedId === job.id && job.snippet && (
-                    <tr key={`${job.id}-exp`} className="bg-slate-50/60">
+                    <tr className="bg-slate-50/60">
                       <td colSpan={6} className="px-5 py-3">
                         <p className="text-slate-500 text-xs leading-relaxed">{job.snippet}</p>
                       </td>
                     </tr>
                   )}
-                </>
+                </React.Fragment>
               ))}
             </tbody>
           </table>
