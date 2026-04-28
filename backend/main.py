@@ -49,7 +49,7 @@ manager = ConnectionManager()
 
 
 def _notify(new_jobs: int):
-    if new_jobs and _loop and not _loop.is_closed():
+    if _loop and not _loop.is_closed():
         asyncio.run_coroutine_threadsafe(
             manager.broadcast({"type": "scan_complete", "new_jobs": new_jobs}),
             _loop,
