@@ -192,6 +192,27 @@ async def trigger_scan(background_tasks: BackgroundTasks):
     return {"message": "Scan started"}
 
 
+@app.post("/admin/reset-and-seed")
+async def reset_and_seed(background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
+    if not load_credentials():
+        raise HTTPException(status_code=401, detail="Not authenticated with Gmail")
+    db.execute(models.JobApplication.__table__.delete())
+    db.execute(models.ProcessedEmail.__table__.delete())
+    db.commit()
+
+    async def _seed():
+        seed_db = SessionLocal()
+        try:
+            loop = asyncio.get_event_loop()
+            n = await loop.run_in_executor(None, lambda: scan_emails(seed_db, days_back=30))
+            await manager.broadcast({"type": "scan_complete", "new_jobs": n})
+        finally:
+            seed_db.close()
+
+    background_tasks.add_task(_seed)
+    return {"message": "Database cleared. Seeding last 30 days of emails in background."}
+
+
 @app.delete("/jobs/{job_id}")
 def delete_job(job_id: int, db: Session = Depends(get_db)):
     job = db.query(models.JobApplication).filter(models.JobApplication.id == job_id).first()

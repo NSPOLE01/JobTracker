@@ -96,7 +96,7 @@ def get_user_email() -> str | None:
     return profile.get("emailAddress")
 
 
-def scan_emails(db) -> int:
+def scan_emails(db, days_back: int = None) -> int:
     from models import JobApplication, ProcessedEmail
 
     creds = load_credentials()
@@ -106,9 +106,15 @@ def scan_emails(db) -> int:
     service = build("gmail", "v1", credentials=creds)
     processed_count = 0
 
+    query = GMAIL_QUERY
+    if days_back:
+        from datetime import timedelta
+        cutoff = (datetime.utcnow() - timedelta(days=days_back)).strftime("%Y/%m/%d")
+        query += f" after:{cutoff}"
+
     try:
         result = service.users().messages().list(
-            userId="me", q=GMAIL_QUERY, maxResults=200
+            userId="me", q=query, maxResults=500
         ).execute()
         messages = result.get("messages", [])
 
