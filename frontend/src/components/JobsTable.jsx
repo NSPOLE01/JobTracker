@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { deleteJob } from '../api'
 import StatusBadge, { STATUS_CONFIG } from './StatusBadge'
+import StatusSelect from './StatusSelect'
 import CompanyTimeline from './CompanyTimeline'
 
 function formatDate(iso) {
@@ -33,7 +34,7 @@ function matchesFilter(job, filter) {
   return job.status === filter
 }
 
-export default function JobsTable({ jobs, onDelete, filter: externalFilter, onFilterChange }) {
+export default function JobsTable({ jobs, onDelete, onStatusChange, filter: externalFilter, onFilterChange }) {
   const [internalFilter, setInternalFilter] = useState('all')
   const [search, setSearch]       = useState('')
   const [deletingId, setDeletingId] = useState(null)
@@ -153,7 +154,7 @@ export default function JobsTable({ jobs, onDelete, filter: externalFilter, onFi
                       <span className="text-slate-600 text-sm truncate block">{job.role || '—'}</span>
                     </td>
                     <td className="px-5 py-3.5 whitespace-nowrap">
-                      <StatusBadge status={job.status} />
+                      <StatusSelect job={job} onChange={onStatusChange} />
                     </td>
                     <td className="px-5 py-3.5 whitespace-nowrap">
                       <span className="font-mono text-slate-400 text-xs">{formatDate(job.email_date)}</span>

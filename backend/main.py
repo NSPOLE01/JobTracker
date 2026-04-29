@@ -269,6 +269,17 @@ def get_job_events(job_id: int, db: Session = Depends(get_db)):
     ]
 
 
+@app.patch("/jobs/{job_id}")
+def update_job(job_id: int, body: dict, db: Session = Depends(get_db)):
+    job = db.query(models.JobApplication).filter(models.JobApplication.id == job_id).first()
+    if not job:
+        raise HTTPException(status_code=404, detail="Not found")
+    if "status" in body:
+        job.status = body["status"]
+    db.commit()
+    return {"ok": True}
+
+
 @app.delete("/jobs/{job_id}")
 def delete_job(job_id: int, db: Session = Depends(get_db)):
     job = db.query(models.JobApplication).filter(models.JobApplication.id == job_id).first()

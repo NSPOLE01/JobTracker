@@ -88,7 +88,12 @@ export default function Dashboard({ email }) {
 
   const handleDelete = (id) => {
     setJobs((prev) => prev.filter((j) => j.id !== id))
-    setStats((prev) => ({ ...prev, total: Math.max(0, prev.total - 1) }))
+    getStats().then((r) => setStats(r.data)).catch(() => {})
+  }
+
+  const handleStatusChange = (id, newStatus) => {
+    setJobs((prev) => prev.map((j) => j.id === id ? { ...j, status: newStatus } : j))
+    getStats().then((r) => setStats(r.data)).catch(() => {})
   }
 
   return (
@@ -180,6 +185,7 @@ export default function Dashboard({ email }) {
                 : <JobsTable
                     jobs={jobs}
                     onDelete={handleDelete}
+                    onStatusChange={handleStatusChange}
                     filter={activeFilter}
                     onFilterChange={setActiveFilter}
                   />
