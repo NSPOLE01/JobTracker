@@ -19,11 +19,16 @@ def _status_rank(status: str) -> int:
 
 SCOPES = ["https://www.googleapis.com/auth/gmail.readonly"]
 
+# Companies to ignore entirely — excluded at query level and as a post-parse check
+EXCLUDED_COMPANIES = {"usertesting", "user testing"}
+
 GMAIL_QUERY = (
     '(subject:application OR subject:interview OR subject:offer '
     'OR subject:"thank you for applying" OR subject:"application received" '
     'OR "your application" OR "regret to inform" OR "job offer" '
-    'OR subject:"phone screen" OR subject:candidacy) -from:me'
+    'OR subject:"phone screen" OR subject:candidacy) '
+    '-from:me -from:usertesting.com '
+    '(in:inbox OR category:promotions OR category:updates)'
 )
 
 
@@ -146,6 +151,11 @@ def scan_emails(db, days_back: int = None) -> int:
             details = extract_job_details(subject, body or snippet, sender)
 
             db.add(ProcessedEmail(email_id=msg_id))
+
+            company_raw = (details.get("company") or "").lower().strip()
+            if any(excl in company_raw for excl in EXCLUDED_COMPANIES):
+                db.commit()
+                continue
 
             if not details.get("is_job_related"):
                 db.commit()
