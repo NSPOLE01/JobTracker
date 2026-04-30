@@ -288,3 +288,16 @@ def delete_job(job_id: int, db: Session = Depends(get_db)):
     db.delete(job)
     db.commit()
     return {"ok": True}
+
+
+@app.delete("/jobs/{job_id}/events/{event_id}")
+def delete_job_event(job_id: int, event_id: int, db: Session = Depends(get_db)):
+    event = db.query(models.JobEvent).filter(
+        models.JobEvent.id == event_id,
+        models.JobEvent.job_application_id == job_id,
+    ).first()
+    if not event:
+        raise HTTPException(status_code=404, detail="Not found")
+    db.delete(event)
+    db.commit()
+    return {"ok": True}

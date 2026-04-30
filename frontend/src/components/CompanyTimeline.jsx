@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { getJobEvents } from '../api'
+import { getJobEvents, deleteJobEvent } from '../api'
 import StatusBadge, { STATUS_CONFIG } from './StatusBadge'
 
 const STATUS_DOT = {
@@ -32,8 +32,9 @@ function CompanyAvatar({ name }) {
 }
 
 export default function CompanyTimeline({ job, onClose }) {
-  const [events, setEvents] = useState([])
-  const [loading, setLoading] = useState(true)
+  const [events, setEvents]       = useState([])
+  const [loading, setLoading]     = useState(true)
+  const [deletingId, setDeletingId] = useState(null)
 
   useEffect(() => {
     getJobEvents(job.id)
@@ -47,6 +48,15 @@ export default function CompanyTimeline({ job, onClose }) {
     document.addEventListener('keydown', onKey)
     return () => document.removeEventListener('keydown', onKey)
   }, [onClose])
+
+  const handleDeleteEvent = async (eventId) => {
+    setDeletingId(eventId)
+    try {
+      await deleteJobEvent(job.id, eventId)
+      setEvents((prev) => prev.filter((e) => e.id !== eventId))
+    } catch {}
+    finally { setDeletingId(null) }
+  }
 
   return (
     <>
@@ -119,9 +129,21 @@ export default function CompanyTimeline({ job, onClose }) {
 
                       {/* Content */}
                       <div className={`pb-6 min-w-0 flex-1 ${isLast ? 'pb-2' : ''}`}>
-                        <div className="flex items-center gap-2 flex-wrap mb-1.5">
+                        <div className="flex items-center gap-2 flex-wrap mb-1.5 group/event">
                           <StatusBadge status={event.status} />
                           <span className="font-mono text-slate-400 text-xs">{formatDate(event.email_date)}</span>
+                          <button
+                            onClick={() => handleDeleteEvent(event.id)}
+                            disabled={deletingId === event.id}
+                            className="ml-auto opacity-0 group-hover/event:opacity-100 transition-opacity p-1 rounded hover:bg-red-50 text-slate-300 hover:text-red-400"
+                          >
+                            {deletingId === event.id
+                              ? <span className="block w-3 h-3 border border-current border-t-transparent rounded-full animate-spin" />
+                              : <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            }
+                          </button>
                         </div>
                         {event.snippet && (
                           <p className="text-slate-500 text-xs leading-relaxed line-clamp-3">
