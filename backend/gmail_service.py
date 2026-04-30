@@ -2,6 +2,26 @@ import os
 import base64
 from datetime import datetime
 
+from cryptography.fernet import Fernet, InvalidToken
+
+
+def _fernet():
+    key = os.getenv("TOKEN_ENCRYPTION_KEY", "")
+    return Fernet(key.encode()) if key else None
+
+def _encrypt(text: str) -> str:
+    f = _fernet()
+    return f.encrypt(text.encode()).decode() if f else text
+
+def _decrypt(text: str) -> str:
+    f = _fernet()
+    if not f:
+        return text
+    try:
+        return f.decrypt(text.encode()).decode()
+    except (InvalidToken, Exception):
+        return text  # pre-encryption token; self-migrates on next save
+
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import Flow
 from googleapiclient.discovery import build
@@ -60,9 +80,9 @@ def _save_token(creds: Credentials) -> None:
     try:
         token = db.query(OAuthToken).first()
         if token:
-            token.token_json = creds.to_json()
+            token.token_json = _encrypt(creds.to_json())
         else:
-            db.add(OAuthToken(token_json=creds.to_json()))
+            db.add(OAuthToken(token_json=_encrypt(creds.to_json())))
         db.commit()
     finally:
         db.close()
@@ -74,7 +94,7 @@ def _load_token_json() -> str | None:
     db = SessionLocal()
     try:
         token = db.query(OAuthToken).first()
-        return token.token_json if token else None
+        return _decrypt(token.token_json) if token else None
     finally:
         db.close()
 
