@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { getAuthStatus } from './api'
 import ConnectGmail from './components/ConnectGmail'
 import Dashboard from './components/Dashboard'
+import JobDetail from './pages/JobDetail'
 
 function Spinner() {
   return (
@@ -33,7 +35,21 @@ export default function App() {
     return () => clearInterval(id)
   }, [])
 
-  if (state.loading)        return <Spinner />
-  if (!state.authenticated) return <ConnectGmail />
-  return <Dashboard email={state.email} />
+  if (state.loading) return <Spinner />
+
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route
+          path="/"
+          element={state.authenticated ? <Dashboard email={state.email} /> : <ConnectGmail />}
+        />
+        <Route
+          path="/jobs/:id"
+          element={state.authenticated ? <JobDetail /> : <Navigate to="/" replace />}
+        />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </BrowserRouter>
+  )
 }

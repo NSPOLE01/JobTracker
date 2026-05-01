@@ -154,6 +154,18 @@ def get_jobs(db: Session = Depends(get_db)):
     ]
 
 
+@app.get("/jobs/{job_id}")
+def get_job(job_id: int, db: Session = Depends(get_db)):
+    j = db.query(models.JobApplication).filter(models.JobApplication.id == job_id).first()
+    if not j:
+        raise HTTPException(status_code=404, detail="Not found")
+    return {
+        "id": j.id, "company": j.company, "role": j.role, "status": j.status,
+        "email_date": j.email_date.isoformat() if j.email_date else None,
+        "snippet": j.snippet, "created_at": j.created_at.isoformat() if j.created_at else None,
+    }
+
+
 @app.get("/stats")
 def get_stats(db: Session = Depends(get_db)):
     jobs = db.query(models.JobApplication).all()

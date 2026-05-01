@@ -1,8 +1,8 @@
 import React, { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { deleteJob } from '../api'
 import StatusBadge, { STATUS_CONFIG } from './StatusBadge'
 import StatusSelect from './StatusSelect'
-import CompanyTimeline from './CompanyTimeline'
 
 function formatDate(iso) {
   if (!iso) return '—'
@@ -35,10 +35,10 @@ function matchesFilter(job, filter) {
 }
 
 export default function JobsTable({ jobs, onDelete, onStatusChange, filter: externalFilter, onFilterChange }) {
+  const navigate = useNavigate()
   const [internalFilter, setInternalFilter] = useState('all')
   const [search, setSearch]       = useState('')
   const [deletingId, setDeletingId] = useState(null)
-  const [selectedJob, setSelectedJob] = useState(null)
 
   const filter    = externalFilter !== undefined ? externalFilter : internalFilter
   const setFilter = (v) => {
@@ -72,10 +72,6 @@ export default function JobsTable({ jobs, onDelete, onStatusChange, filter: exte
   }
 
   return (
-    <>
-    {selectedJob && (
-      <CompanyTimeline job={selectedJob} onClose={() => setSelectedJob(null)} />
-    )}
     <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
       {/* Toolbar */}
       <div className="px-5 py-3.5 border-b border-slate-100 flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
@@ -139,7 +135,7 @@ export default function JobsTable({ jobs, onDelete, onStatusChange, filter: exte
                 <React.Fragment key={job.id}>
                   <tr
                     key={job.id}
-                    onClick={() => setSelectedJob(job)}
+                    onClick={() => navigate(`/jobs/${job.id}`)}
                     className="hover:bg-slate-50/80 transition-colors cursor-pointer group"
                   >
                     <td className="px-5 py-3.5">
@@ -187,6 +183,5 @@ export default function JobsTable({ jobs, onDelete, onStatusChange, filter: exte
         )}
       </div>
     </div>
-    </>
   )
 }

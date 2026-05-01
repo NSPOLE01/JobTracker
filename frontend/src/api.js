@@ -4,7 +4,8 @@ const api = axios.create({ baseURL: import.meta.env.VITE_API_URL || 'http://loca
 
 export const getAuthStatus = () => api.get('/auth/status')
 export const getAuthUrl   = () => api.get('/auth/google')
-export const getJobs      = () => api.get('/jobs')
+export const getJobs      = ()   => api.get('/jobs')
+export const getJob       = (id) => api.get(`/jobs/${id}`)
 export const getStats     = () => api.get('/stats')
 export const triggerScan  = () => api.post('/scan')
 export const deleteJob    = (id) => api.delete(`/jobs/${id}`)
