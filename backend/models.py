@@ -34,6 +34,7 @@ class JobEvent(Base):
     status = Column(String)
     email_date = Column(DateTime)
     snippet = Column(Text)
+    email_id = Column(String, nullable=True)
     created_at = Column(DateTime, default=func.now())
 
 

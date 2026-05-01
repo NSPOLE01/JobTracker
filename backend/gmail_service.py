@@ -223,6 +223,7 @@ def scan_emails(db, days_back: int = None) -> int:
                 status=status,
                 email_date=email_date,
                 snippet=snippet[:500],
+                email_id=msg_id,
             ))
 
             db.commit()

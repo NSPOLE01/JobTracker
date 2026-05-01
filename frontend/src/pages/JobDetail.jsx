@@ -141,11 +141,14 @@ export default function JobDetail() {
                       </div>
 
                       {/* Card */}
-                      <div className={`w-44 rounded-xl border p-3.5 transition-shadow hover:shadow-md ${
-                        isCurrent
-                          ? 'border-indigo-100 bg-gradient-to-b from-indigo-50/60 to-white'
-                          : 'border-slate-100 bg-slate-50/50'
-                      }`}>
+                      <div
+                        onClick={() => event.email_id && window.open(`https://mail.google.com/mail/u/0/#all/${event.email_id}`, '_blank')}
+                        className={`w-44 rounded-xl border p-3.5 transition-shadow hover:shadow-md ${
+                          isCurrent
+                            ? 'border-indigo-100 bg-gradient-to-b from-indigo-50/60 to-white'
+                            : 'border-slate-100 bg-slate-50/50'
+                        } ${event.email_id ? 'cursor-pointer' : ''}`}
+                      >
                         <div className="flex items-start justify-between gap-1 mb-2">
                           <StatusBadge status={event.status} />
                           <button

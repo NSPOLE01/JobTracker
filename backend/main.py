@@ -276,6 +276,7 @@ def get_job_events(job_id: int, db: Session = Depends(get_db)):
             "status": e.status,
             "email_date": e.email_date.isoformat() if e.email_date else None,
             "snippet": e.snippet,
+            "email_id": e.email_id,
         }
         for e in events
     ]
