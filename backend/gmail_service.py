@@ -199,8 +199,9 @@ def scan_emails(db, days_back: int = None) -> int:
             if existing:
                 if _status_rank(status) > _status_rank(existing.status):
                     existing.status = status
-                existing.email_date = email_date
-                existing.snippet = snippet[:500]
+                if email_date and (not existing.email_date or email_date > existing.email_date):
+                    existing.email_date = email_date
+                    existing.snippet = snippet[:500]
                 db.add(existing)
                 db.flush()
                 job_id = existing.id
