@@ -154,6 +154,38 @@ def get_jobs(db: Session = Depends(get_db)):
     ]
 
 
+@app.get("/stats/sankey")
+def get_sankey_stats(db: Session = Depends(get_db)):
+    jobs = db.query(models.JobApplication).all()
+    job_map = {j.id: j for j in jobs}
+    total = len(jobs)
+
+    interviewed_ids = {
+        row[0] for row in
+        db.query(models.JobEvent.job_application_id)
+        .filter(models.JobEvent.status.in_(["phone_screen", "interview_scheduled"]))
+        .distinct().all()
+    }
+
+    interviewed            = len(interviewed_ids)
+    offers                 = sum(1 for j in jobs if j.status == "offer")
+    rejected_total         = sum(1 for j in jobs if j.status == "rejected")
+    rejected_after_iv      = sum(1 for j in jobs if j.status == "rejected" and j.id in interviewed_ids)
+    direct_rejected        = rejected_total - rejected_after_iv
+    still_in_progress      = max(0, total - interviewed - direct_rejected)
+    interview_in_progress  = max(0, interviewed - offers - rejected_after_iv)
+
+    return {
+        "total": total,
+        "interviewed": interviewed,
+        "offers": offers,
+        "direct_rejected": direct_rejected,
+        "rejected_after_interview": rejected_after_iv,
+        "still_in_progress": still_in_progress,
+        "interview_in_progress": interview_in_progress,
+    }
+
+
 @app.get("/jobs/{job_id}")
 def get_job(job_id: int, db: Session = Depends(get_db)):
     j = db.query(models.JobApplication).filter(models.JobApplication.id == job_id).first()

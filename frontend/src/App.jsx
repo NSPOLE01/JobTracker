@@ -4,6 +4,7 @@ import { getAuthStatus } from './api'
 import ConnectGmail from './components/ConnectGmail'
 import Dashboard from './components/Dashboard'
 import JobDetail from './pages/JobDetail'
+import SankeyPage from './pages/SankeyPage'
 
 function Spinner() {
   return (
@@ -47,6 +48,10 @@ export default function App() {
         <Route
           path="/jobs/:id"
           element={state.authenticated ? <JobDetail /> : <Navigate to="/" replace />}
+        />
+        <Route
+          path="/flow"
+          element={state.authenticated ? <SankeyPage /> : <Navigate to="/" replace />}
         />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
