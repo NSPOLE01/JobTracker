@@ -8,7 +8,7 @@ const NODE_COLORS = {
   'Interviewed':         '#a78bfa',
   'Offer':               '#10b981',
   'Rejected':            '#f87171',
-  'In Progress':         '#94a3b8',
+  'Ghosted':             '#94a3b8',
   'Still Interviewing':  '#fbbf24',
 }
 
@@ -16,7 +16,7 @@ function buildSankeyData(data) {
   const allLinks = [
     { from: 'Applied',     to: 'Interviewed',        value: data.interviewed },
     { from: 'Applied',     to: 'Rejected',            value: data.direct_rejected },
-    { from: 'Applied',     to: 'In Progress',         value: data.still_in_progress },
+    { from: 'Applied',     to: 'Ghosted',             value: data.still_in_progress },
     { from: 'Interviewed', to: 'Offer',               value: data.offers },
     { from: 'Interviewed', to: 'Rejected',            value: data.rejected_after_interview },
     { from: 'Interviewed', to: 'Still Interviewing',  value: data.interview_in_progress },
