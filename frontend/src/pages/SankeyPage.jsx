@@ -153,17 +153,16 @@ export default function SankeyPage() {
                 link={<SankeyLink />}
               >
                 <Tooltip
-                  formatter={(value) => [`${value} application${value !== 1 ? 's' : ''}`, '']}
-                  contentStyle={{
-                    background: '#0f172a',
-                    border: 'none',
-                    borderRadius: '10px',
-                    color: 'white',
-                    fontSize: '12px',
-                    padding: '8px 12px',
+                  content={({ payload }) => {
+                    if (!payload?.length) return null
+                    const val = payload[0]?.value
+                    if (val == null) return null
+                    return (
+                      <div style={{ background: '#0f172a', borderRadius: '10px', color: 'white', fontSize: '12px', padding: '8px 12px' }}>
+                        {val} application{val !== 1 ? 's' : ''}
+                      </div>
+                    )
                   }}
-                  itemStyle={{ color: 'white' }}
-                  labelStyle={{ display: 'none' }}
                 />
               </Sankey>
             </div>
