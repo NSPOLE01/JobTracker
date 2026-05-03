@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { triggerScan } from '../api'
+import { useAuth } from '../App'
 
 function RefreshIcon({ spinning }) {
   return (
@@ -14,11 +15,21 @@ function RefreshIcon({ spinning }) {
   )
 }
 
-export default function Header({ email, lastScanned, onScanComplete }) {
+export default function Header({ email, onScanComplete }) {
   const navigate = useNavigate()
   const location = useLocation()
+  const { lastScanned } = useAuth()
   const isHome = location.pathname === '/'
   const [scanning, setScanning] = useState(false)
+  const [profileOpen, setProfileOpen] = useState(false)
+  const profileRef = useRef(null)
+
+  useEffect(() => {
+    if (!profileOpen) return
+    const handler = (e) => { if (!profileRef.current?.contains(e.target)) setProfileOpen(false) }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [profileOpen])
 
   const handleScan = async () => {
     setScanning(true)
@@ -91,15 +102,24 @@ export default function Header({ email, lastScanned, onScanComplete }) {
           </button>
 
           {email && (
-            <div className="flex items-center gap-2 pl-1 border-l border-white/10">
-              <div className="w-6 h-6 rounded-full bg-indigo-500/20 border border-indigo-400/30 flex items-center justify-center flex-shrink-0">
-                <span className="text-[10px] font-bold text-indigo-300">
+            <div ref={profileRef} className="relative pl-4 border-l border-white/10">
+              <button
+                onClick={() => setProfileOpen(o => !o)}
+                className="w-8 h-8 rounded-full bg-indigo-500/20 border border-indigo-400/30 flex items-center justify-center hover:bg-indigo-500/30 transition-colors"
+              >
+                <span className="text-xs font-bold text-indigo-300">
                   {email[0].toUpperCase()}
                 </span>
+              </button>
+
+              <div className={`absolute left-1/2 -translate-x-1/2 top-full mt-2 bg-slate-800 border border-white/10 rounded-xl shadow-xl overflow-hidden transition-all duration-200 ${
+                profileOpen ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-1 pointer-events-none'
+              }`}>
+                <div className="px-4 py-3 whitespace-nowrap">
+                  <p className="text-slate-500 text-[10px] uppercase tracking-widest font-semibold mb-1">Signed in as</p>
+                  <p className="text-slate-200 text-xs">{email}</p>
+                </div>
               </div>
-              <span className="hidden md:inline text-slate-400 text-xs max-w-[140px] truncate">
-                {email}
-              </span>
             </div>
           )}
         </div>

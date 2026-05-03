@@ -6,7 +6,7 @@ import Dashboard from './components/Dashboard'
 import JobDetail from './pages/JobDetail'
 import SankeyPage from './pages/SankeyPage'
 
-export const AuthContext = createContext({ email: '' })
+export const AuthContext = createContext({ email: '', lastScanned: null, setLastScanned: () => {} })
 export const useAuth = () => useContext(AuthContext)
 
 function Spinner() {
@@ -19,6 +19,7 @@ function Spinner() {
 
 export default function App() {
   const [state, setState] = useState({ loading: true, authenticated: false, email: '' })
+  const [lastScanned, setLastScanned] = useState(null)
 
   const checkAuth = async () => {
     try {
@@ -42,7 +43,7 @@ export default function App() {
   if (state.loading) return <Spinner />
 
   return (
-    <AuthContext.Provider value={{ email: state.email }}>
+    <AuthContext.Provider value={{ email: state.email, lastScanned, setLastScanned }}>
       <BrowserRouter>
         <Routes>
           <Route

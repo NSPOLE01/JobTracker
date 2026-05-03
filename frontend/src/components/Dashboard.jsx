@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { getJobs, getStats } from '../api'
 import { useWebSocket } from '../hooks/useWebSocket'
+import { useAuth } from '../App'
 import Header from './Header'
 import StatsCard from './StatsCard'
 import JobsTable from './JobsTable'
@@ -40,10 +41,10 @@ function EmptyState() {
 }
 
 export default function Dashboard({ email }) {
+  const { setLastScanned } = useAuth()
   const [jobs, setJobs]             = useState([])
   const [stats, setStats]           = useState({ total: 0, interviews: 0, offers: 0, rejections: 0, by_week: [] })
   const [loading, setLoading]       = useState(true)
-  const [lastScanned, setLastScanned] = useState(null)
   const [activeFilter, setActiveFilter] = useState('all')
   const [toast, setToast]               = useState(null)
   const toastTimer                       = useRef(null)
@@ -106,7 +107,7 @@ export default function Dashboard({ email }) {
         </div>
       </div>
 
-      <Header email={email} lastScanned={lastScanned} onScanComplete={fetchAll} />
+      <Header email={email} onScanComplete={fetchAll} />
 
       <main className="max-w-6xl mx-auto px-5 py-7 space-y-6">
         {loading ? (
