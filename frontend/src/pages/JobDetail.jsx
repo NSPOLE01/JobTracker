@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { getJob, getJobEvents, deleteJobEvent } from '../api'
 import StatusBadge from '../components/StatusBadge'
+import Header from '../components/Header'
+import { useAuth } from '../App'
 
 const STATUS_DOT = {
   applied:             { dot: 'bg-sky-400',     ring: 'ring-sky-200'     },
@@ -35,6 +37,7 @@ function CompanyAvatar({ name }) {
 export default function JobDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const { email } = useAuth()
   const [job, setJob]             = useState(null)
   const [events, setEvents]       = useState([])
   const [loading, setLoading]     = useState(true)
@@ -77,22 +80,7 @@ export default function JobDetail() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      {/* Nav bar */}
-      <div className="bg-white border-b border-slate-100 sticky top-0 z-10">
-        <div className="max-w-6xl mx-auto px-6 h-14 flex items-center gap-3">
-          <button
-            onClick={() => navigate(-1)}
-            className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-800 transition-colors"
-          >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
-            </svg>
-            Back
-          </button>
-          <span className="text-slate-200">·</span>
-          <span className="text-sm text-slate-400 truncate">{job.company}</span>
-        </div>
-      </div>
+      <Header email={email} />
 
       <main className="max-w-6xl mx-auto px-6 py-8 space-y-6">
         {/* Company header */}

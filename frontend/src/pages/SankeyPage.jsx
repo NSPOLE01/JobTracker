@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Sankey, Tooltip } from 'recharts'
 import { getSankeyStats } from '../api'
+import Header from '../components/Header'
+import { useAuth } from '../App'
 
 const NODE_LABELS = {
   'Applied':            'applied',
@@ -101,6 +103,7 @@ function SankeyLink({ sourceX, sourceY, sourceControlX, targetX, targetY, target
 
 export default function SankeyPage() {
   const navigate = useNavigate()
+  const { email } = useAuth()
   const [data, setData]     = useState(null)
   const [loading, setLoading] = useState(true)
 
@@ -116,21 +119,7 @@ export default function SankeyPage() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <div className="bg-white border-b border-slate-100 sticky top-0 z-10">
-        <div className="max-w-6xl mx-auto px-6 h-14 flex items-center gap-3">
-          <button
-            onClick={() => navigate(-1)}
-            className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-800 transition-colors"
-          >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
-            </svg>
-            Back
-          </button>
-          <span className="text-slate-200">·</span>
-          <span className="text-sm text-slate-400">Application Flow</span>
-        </div>
-      </div>
+      <Header email={email} />
 
       <main className="max-w-6xl mx-auto px-6 py-8 space-y-6">
         <div>
