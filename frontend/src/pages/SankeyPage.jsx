@@ -162,6 +162,7 @@ export default function SankeyPage() {
                     fontSize: '12px',
                     padding: '8px 12px',
                   }}
+                  itemStyle={{ color: 'white' }}
                   labelStyle={{ display: 'none' }}
                 />
               </Sankey>
