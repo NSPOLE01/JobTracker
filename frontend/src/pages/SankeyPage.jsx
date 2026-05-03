@@ -3,6 +3,15 @@ import { useNavigate } from 'react-router-dom'
 import { Sankey, Tooltip } from 'recharts'
 import { getSankeyStats } from '../api'
 
+const NODE_LABELS = {
+  'Applied':            'applied',
+  'Interviewed':        'interviewed',
+  'Offer':              'offers',
+  'Rejected':           'rejected',
+  'Ghosted':            'ghosted',
+  'Still Interviewing': 'still interviewing',
+}
+
 const NODE_COLORS = {
   'Applied':             '#6366f1',
   'Interviewed':         '#a78bfa',
@@ -155,11 +164,14 @@ export default function SankeyPage() {
                 <Tooltip
                   content={({ payload }) => {
                     if (!payload?.length) return null
-                    const val = payload[0]?.value
+                    const item = payload[0]
+                    const val = item?.value
                     if (val == null) return null
+                    const name = item?.name || item?.payload?.target?.name || item?.payload?.name || ''
+                    const label = NODE_LABELS[name] || 'applications'
                     return (
                       <div style={{ background: '#0f172a', borderRadius: '10px', color: 'white', fontSize: '12px', padding: '8px 12px' }}>
-                        {val} application{val !== 1 ? 's' : ''}
+                        {val} {label}
                       </div>
                     )
                   }}
